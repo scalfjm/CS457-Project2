@@ -1,15 +1,3 @@
-###############################################
-# Group Name  : SAP
-
-# Member1 Name: Ben Combs
-# Member1 SIS ID: 831850566
-# Member1 Login ID: bcombs18
-
-# Member2 Name: XXXXXX
-# Member2 SIS ID: XXXXXX
-# Member2 Login ID: XXXXXX
-###############################################
-
 import getopt
 import socket
 import sys
@@ -19,7 +7,7 @@ import random
 def formatMessage(url, chain):
     message = url + "\n"
     for ss in chain :
-        message = message + '{} {}\n'.format(chain[0], chain[1])
+        message = message + '{} {}\n'.format(ss[0], ss[1])
     return message
 
 def parseChain(chainStr):
@@ -56,8 +44,8 @@ def run_awget(args):
     chain.remove((nextIP, nextPort))
 
     nextSSConn = socket.create_connection((nextIP, nextPort))
-    data = formatMessage(url, chain)
-    nextSSConn.send(data.encode())
+    message = formatMessage(url, chain)
+    nextSSConn.send(message.encode())
 
     print("waiting for file...")
     response = nextSSConn.recv(1024).decode()

@@ -19,10 +19,15 @@ import random
 import requests
 from typing import List
 
+def formatMessage(url, chain):
+    message = url + "\n"
+    for ss in chain :
+        message = message + '{} {}\n'.format(ss[0], ss[1])
+    return message
 
-def parseChain(chain):
+def parseChain(chainStr):
     chain = []
-    for line in chain.splitlines():
+    for line in chainStr.splitlines():
         line = line.strip()
         if line:
             parsed = line.split()
@@ -34,24 +39,24 @@ def parseChain(chain):
 def runThread(clientConn):
     data = clientConn.recv(1024).decode()
     url = data.splitlines()[0]
-    chain: List = data[len(url):]
+    chain: List = parseChain(data[len(url):])
 
     print("Request: {}".format(url))
 
-    if(len(chain) > 1):
+    if(len(chain) > 0):
         print("chainlist is")
-        for ss in chain.splitline():
+        for ss in chain:
             print("{}".format(ss))
         try:
             nextIP, nextPort = chain[random.randint(0, len(chain)-1)]
             print("next ss is (\'{}\', {})".format(nextIP, nextPort))
             chain.remove((nextIP, nextPort))
+            message = formatMessage(url, chain)
             nextSS = socket.create_connection((nextIP, nextPort))
+            nextSS.send(message.encode())
         except:
             print("Failed to connect to next stepping stone")
             exit(1)
-        print("Relaying file...")
-        clientConn.send(data.encode())
     else:
         response = requests.get(url, verify=True)
         print("File received")
