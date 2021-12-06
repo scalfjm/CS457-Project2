@@ -32,22 +32,32 @@ def parseChain(chain):
     return chain
 
 def runThread(clientConn):
-    data = clientConn.recv(1024)
+    data = clientConn.recv(1024).decode()
     url = data.splitlines()[0]
     chain: List = data[len(url):]
-    if(len(chain) > 0):
+
+    print("Request: {}".format(url))
+
+    if(len(chain) > 1):
+        print("chainlist is")
+        for ss in chain.splitline():
+            print("{}".format(ss))
         try:
             nextIP, nextPort = chain[random.randint(0, len(chain)-1)]
+            print("next ss is (\'{}\', {})".format(nextIP, nextPort))
             chain.remove((nextIP, nextPort))
             nextSS = socket.create_connection((nextIP, nextPort))
         except:
             print("Failed to connect to next stepping stone")
             exit(1)
+        print("Relaying file...")
         clientConn.send(data.encode())
     else:
-        encoding, text = requests.get(url, verify=False)
-        content = str(encoding) + "\n" + text
-        clientConn.send(content.encode())
+        response = requests.get(url, verify=True)
+        print("File received")
+        print("Relaying file...")
+        clientConn.send(response.text.encode())
+    print("Goodbye!")
     clientConn.close()
 
         
@@ -64,7 +74,7 @@ def main():
         if o == "-p":
             portNumber = a
 
-    print("ss: {}, {}".format(hostname, portNumber))
+    print("ss {}, {}:".format(hostname, portNumber))
 
     ssSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ssSocket.bind(('', int(portNumber)))

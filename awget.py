@@ -61,15 +61,16 @@ def run_awget(args):
 
     print("waiting for file...")
     response = nextSSConn.recv(1024).decode()
-    
-    print(response)
-    encoding = response.splitlines()[0]
-    content = response.msg[len(encoding):]
+
+    content = response
     filename = url.split('/')[-1]
+    print("Received file {}".format(filename))
     if filename == '' or '/' not in url:
         filename = 'index.html'
     with open(filename, 'w') as file:
         file.write(content)
+
+    print("Goodbye!")
 
 def main():
     parser = argparse.ArgumentParser()
