@@ -1,6 +1,17 @@
-import getopt
+###############################################
+# Group Name  : SAP
+
+# Member1 Name: Ben Combs
+# Member1 SIS ID: 831850566
+# Member1 Login ID: bcombs18
+
+# Member2 Name: Max Scalf
+# Member2 SIS ID: 832005539
+# Member2 Login ID: scalfjm
+###############################################
+
+
 import socket
-import sys
 import argparse
 import random
 
@@ -48,15 +59,16 @@ def run_awget(args):
     nextSSConn.send(message.encode())
 
     print("waiting for file...")
-    response = nextSSConn.recv(1024).decode()
-
-    content = response
     filename = url.split('/')[-1]
-    print("Received file {}".format(filename))
     if filename == '' or '/' not in url:
         filename = 'index.html'
-    with open(filename, 'w') as file:
-        file.write(content)
+    with open(filename, 'wb') as file:
+        while True:
+            content = nextSSConn.recv(1024)
+            file.write(content)
+            if not content:
+                break
+    print("Received file {}".format(filename))
 
     print("Goodbye!")
 
