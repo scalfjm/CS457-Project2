@@ -5,9 +5,9 @@
 # Member1 SIS ID: 831850566
 # Member1 Login ID: bcombs18
 
-# Member2 Name: XXXXXX
-# Member2 SIS ID: XXXXXX
-# Member2 Login ID: XXXXXX
+# Member2 Name: Max Scalf
+# Member2 SIS ID: 832005539
+# Member2 Login ID: scalfjm
 ###############################################
 
 import sys
@@ -16,14 +16,7 @@ import socket
 import threading
 import os
 import random
-import requests
 from typing import List
-
-def formatMessage(url, chain):
-    message = url + "\n"
-    for ss in chain :
-        message = message + '{} {}\n'.format(ss[0], ss[1])
-    return message
 
 def parseChain(chainStr):
     chain = []
@@ -39,33 +32,71 @@ def parseChain(chainStr):
 def runThread(clientConn):
     data = clientConn.recv(1024).decode()
     url = data.splitlines()[0]
-    chain: List = parseChain(data[len(url):])
+    chain = data.splitlines()
 
     print("Request: {}".format(url))
 
-    if(len(chain) > 0):
+    if(len(chain) > 1):
         print("chainlist is")
-        for ss in chain:
+        for ss in chain[1:]:
             print("{}".format(ss))
         try:
-            nextIP, nextPort = chain[random.randint(0, len(chain)-1)]
+            rand = random.randint(1, len(chain)-1)
+
+            nextIP, nextPort = chain[rand].split(" ")
             print("next ss is (\'{}\', {})".format(nextIP, nextPort))
-            chain.remove((nextIP, nextPort))
-            message = formatMessage(url, chain)
+            chain.pop(rand)
             nextSS = socket.create_connection((nextIP, nextPort))
-            nextSS.send(message.encode())
+
+            data = ""
+            for c in chain:
+                data += c + "\n"
+            nextSS.sendall(data.encode())
+
+            print("waiting for file...")
+            receiveFromSS(nextSS)
+            print("Relaying file...")
+            relayToClient(clientConn)
+
+            
         except:
             print("Failed to connect to next stepping stone")
             exit(1)
+
     else:
-        response = requests.get(url, verify=True)
-        print("File received")
-        print("Relaying file...")
-        clientConn.send(response.text.encode())
+        print("chainlist is empty\nissuing wget for file", url)
+        os.system("wget -q -O " + "tmp_transfer" + " " + url)
+        print("File received\nRelaying file...")
+        relayToClient(clientConn)
+
     print("Goodbye!")
     clientConn.close()
+    #os.system("rm -f tmp_transfer")
 
-        
+def receiveFromSS(nextSS):
+    o = open("tmp_transfer", 'wb')
+
+    while True:
+        chunk = nextSS.recv(1024)
+        if not chunk:
+            break
+
+        o.write(chunk)
+
+def relayToClient(clientConn):
+    f = open("tmp_transfer", 'rb')
+
+    while True:
+        chunk = f.read(1024)
+
+        while(chunk):
+            clientConn.sendall(chunk)
+            chunk = f.read(1024)
+
+        f.close()
+        clientConn.close()
+        break
+
 def main():
     portNumber = 8000
     hostname = socket.gethostname()
