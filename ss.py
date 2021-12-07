@@ -34,6 +34,8 @@ def runThread(clientConn):
     url = data.splitlines()[0]
     chain = data.splitlines()
 
+    tmpfile = createTmpfile()
+
     print("Request: {}".format(url))
 
     if(len(chain) > 1):
@@ -46,6 +48,7 @@ def runThread(clientConn):
             nextIP, nextPort = chain[rand].split(" ")
             print("next ss is (\'{}\', {})".format(nextIP, nextPort))
             chain.pop(rand)
+            print((nextIP.replace("'", "")))
             nextSS = socket.create_connection((nextIP, nextPort))
 
             data = ""
@@ -54,27 +57,26 @@ def runThread(clientConn):
             nextSS.sendall(data.encode())
 
             print("waiting for file...")
-            receiveFromSS(nextSS)
+            receiveFromSS(nextSS, tmpfile)
             print("Relaying file...")
-            relayToClient(clientConn)
+            relayToClient(clientConn, tmpfile)
 
             
         except:
             print("Failed to connect to next stepping stone")
-            exit(1)
 
     else:
         print("chainlist is empty\nissuing wget for file", url)
-        os.system("wget -q -O " + "tmp_transfer" + " " + url)
+        os.system("wget -q -O " + tmpfile + " " + url)
         print("File received\nRelaying file...")
-        relayToClient(clientConn)
+        relayToClient(clientConn, tmpfile)
 
     print("Goodbye!")
     clientConn.close()
-    #os.system("rm -f tmp_transfer")
+    os.system("rm -f " + tmpfile)
 
-def receiveFromSS(nextSS):
-    o = open("tmp_transfer", 'wb')
+def receiveFromSS(nextSS, tmpfile):
+    o = open(tmpfile, 'wb')
 
     while True:
         chunk = nextSS.recv(1024)
@@ -83,8 +85,8 @@ def receiveFromSS(nextSS):
 
         o.write(chunk)
 
-def relayToClient(clientConn):
-    f = open("tmp_transfer", 'rb')
+def relayToClient(clientConn, tmpfile):
+    f = open(tmpfile, 'rb')
 
     while True:
         chunk = f.read(1024)
@@ -97,6 +99,13 @@ def relayToClient(clientConn):
         clientConn.close()
         break
 
+def createTmpfile():
+    tmpnum = str(random.randint(0,999999999))
+    tmpfile = "tmp"+tmpnum
+    while os.path.exists("./" +tmpfile):
+        tmpnum = str(random.randint(0,999999999))
+        tmpfile = "tmp"+tmpnum
+    return tmpfile
 def main():
     portNumber = 8000
     hostname = socket.gethostname()
